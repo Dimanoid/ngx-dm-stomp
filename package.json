@@ -1,0 +1,15 @@
+{
+    "name": "@dimanoid/stomp",
+    "version": "0.0.1",
+    "scripts": {
+        "build": "nodemodules/lib-tools/bin/lib build",
+        "publish": "npm publish dist/lib --access public"
+    },
+    "dependencies": {
+        "rxjs": "~6.6.7",
+        "tslib": "^2.1.0"
+    },
+    "devDependencies": {
+        "lib-tools": "^2.0.4"
+    }
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"stomp.js","sourceRoot":"","sources":["../../../../src/stomp.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,IAAM,KAAK,GAAG,CAAC,CAAC","sourcesContent":["export const STOMP = 1;\n"]}

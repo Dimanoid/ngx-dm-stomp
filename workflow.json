@@ -1,0 +1,43 @@
+{
+    "$schema": "../../dist/schemas/schema.json",
+    "projects": {
+        "lib": {
+            "root": "./",
+            "tasks": {
+                "build": {
+                    "outputPath": "dist/lib",
+                    "script": {
+                        "compilations": [
+                            {
+                                "declaration": true,
+                                "target": "ES2015",
+                                "outDir": "esm2015",
+                                "esBundle": {
+                                    "outputFile": "fesm2015/stomp.js"
+                                }
+                            },
+                            {
+                                "declaration": false,
+                                "target": "es5",
+                                "outDir": "esm5",
+                                "esBundle": true,
+                                "umdBundle": {
+                                    "outputFile": "bundles/stomp.umd.js"
+                                }
+                            }
+                        ],
+                        "tsConfig": "tsconfig.build.json",
+                        "addToPackageJson": true,
+                        "entry": "public_api.ts",
+                        "umdId": "stomp",
+                        "peerDependenciesAsExternals": true,
+                        "dependenciesAsExternals": true,
+                        "externals": {
+                            "tslib": "tslib"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

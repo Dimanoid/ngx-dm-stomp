@@ -1,0 +1,20 @@
+{
+  "name": "@dimanoid/stomp",
+  "version": "0.0.1",
+  "scripts": {
+    "publish": "npm publish dist/lib --access public"
+  },
+  "dependencies": {
+    "rxjs": "~6.6.7",
+    "tslib": "^2.1.0"
+  },
+  "typings": "public_api.d.ts",
+  "es2015": "fesm2015/stomp.js",
+  "esm2015": "esm2015/public_api.js",
+  "module": "fesm2015/stomp.js",
+  "fesm2015": "fesm2015/stomp.js",
+  "esm5": "esm5/public_api.js",
+  "fesm5": "fesm5/stomp.js",
+  "main": "bundles/stomp.umd.js",
+  "sideEffects": false
+}
