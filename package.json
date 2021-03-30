@@ -6,8 +6,7 @@
     },
     "license": "MIT",
     "scripts": {
-        "build": "node_modules/lib-tools/bin/lib build",
-        "publish": "npm publish dist/lib"
+        "build": "node_modules/lib-tools/bin/lib build"
     },
     "peerDependencies": {
         "rxjs": "~6.6.7"
