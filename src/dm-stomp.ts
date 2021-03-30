@@ -46,7 +46,7 @@ export class DmStomp {
 
     public debug: Subject<any> = new Subject();
     
-    private client?: StompClient;
+    public client?: StompClient;
 
     constructor(private config?: IDmStompConfig) {
         if (config) {
@@ -63,7 +63,7 @@ export class DmStomp {
             disconnect: f => this.onDisconnect.next(f),
             receive: f => this.onReceive.next(f),
             receipt: f => this.onReceipt.next(f),
-            debug: f => this.debug.next(f),
+            debug: (...args) => this.debug.next([...args]),
         });
         this.client.heartbeat.incoming = this.config.heartbeatIn!;
         this.client.heartbeat.outgoing = this.config.heartbeatOut!;
