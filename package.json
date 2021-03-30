@@ -1,6 +1,6 @@
 {
     "name": "@dimanoid/stomp",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "scripts": {
         "build": "node_modules/lib-tools/bin/lib build",
         "publish": "npm publish dist/lib --access public"
