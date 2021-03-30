@@ -57,14 +57,16 @@ export class DmStomp {
     configure(config: IDmStompConfig): void {
         this.config = Object.assign(Object.assign({}, DM_STOMP_DEFAULT_CONFIG), config);
         const ws = this.config.ws || new WebSocket(this.config.url!, this.config.protocols);
-        this.client = new StompClient(ws);
+        this.client = new StompClient(ws, {
+            error: f => this.onError.next(f),
+            connect: f => this.onConnect.next(f),
+            disconnect: f => this.onDisconnect.next(f),
+            receive: f => this.onReceive.next(f),
+            receipt: f => this.onReceipt.next(f),
+            debug: f => this.debug.next(f),
+        });
         this.client.heartbeat.incoming = this.config.heartbeatIn!;
         this.client.heartbeat.outgoing = this.config.heartbeatOut!;
-        this.client.errorCallback = f => this.onError.next(f);
-        this.client.connectCallback = f => this.onConnect.next(f);
-        this.client.disconnectCallback = f => this.onDisconnect.next(f);
-        this.client.onreceive = f => this.onReceive.next(f);
-        this.client.onreceipt = f => this.onReceipt.next(f);
     }
 
     connect(): boolean {
@@ -93,8 +95,8 @@ export class DmStomp {
         this.client!.send(topic, headers || {}, message);
     }
 
-    subscribe(topic: string, callback: (frame: StompFrame) => void, headers?: { [id: string]: string }): void {
-        this.client!.subscribe(topic, (msg) => callback(msg), headers || { ack: 'auto' });
+    subscribe(topic: string, callback?: (frame: StompFrame) => void, headers?: { [id: string]: string }): void {
+        this.client!.subscribe(topic, (msg) => callback ? callback(msg) : {}, headers || { ack: 'auto' });
     }
 
     isConnected(): boolean {

@@ -142,9 +142,22 @@ export class StompClient {
 
     debug?: (...args: any[]) => void;
 
-    constructor(ws: WebSocket) {
+    constructor(ws: WebSocket, callbacks?: {
+        error?: (frame: StompFrame) => void,
+        connect?: (frame: StompFrame) => void,
+        disconnect?: (frame: StompFrame) => void,
+        receive?: (frame: StompFrame) => void,
+        receipt?: (frame: StompFrame) => void,
+        debug?: (frame: StompFrame) => void,
+    }) {
         this.ws = ws;
         this.ws.binaryType = 'arraybuffer';
+        this.errorCallback = callbacks?.error;
+        this.connectCallback = callbacks?.connect;
+        this.disconnectCallback = callbacks?.connect;
+        this.onreceive = callbacks?.receive;
+        this.onreceipt = callbacks?.receipt;
+        this.debug = callbacks?.debug;
     }
 
     D(...args: any[]): void {
