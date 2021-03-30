@@ -1,6 +1,6 @@
 {
     "name": "@dimanoid/stomp",
-    "version": "0.0.9",
+    "version": "0.0.10",
     "repository": {
         "url": "https://github.com/Dimanoid/stomp.git"
     },
