@@ -9,42 +9,28 @@ export enum DmStompState {
     Disconnected
 }
 
-export class DmStompServiceConfig {
-    url: string = '';
-    login: string = 'guest';
-    passcode: string = 'guest';
-    heartbeatIn: number = 0;
-    heartbeatOut: number =20000;
+export interface IDmStompConfig {
+    url?: string;
+    login?: string;
+    passcode?: string;
+    heartbeatIn?: number;
+    heartbeatOut?: number;
     ws?: WebSocket;
-    host: string = '/';
-    protocols?: string[] = ['v10.stomp', 'v11.stomp'];
+    host?: string;
+    protocols?: string[];
 }
 
-
-export class StompQ {
-    static debug?: (...args: any[]) => void;
-
-    static client(url: string, protocols?: string[]): StompClient {
-        if (protocols == null) {
-            protocols = ['v10.stomp', 'v11.stomp'];
-        }
-        const ws = new WebSocket(url, protocols);
-        return new StompClient(ws);
-    }
-
-    static over(ws: WebSocket) {
-        return new StompClient(ws);
-    }
-
-    static D(...args: any[]) {
-        if (this.debug) {
-            this.debug(...args);
-        }
-    }
-
+export const DM_STOMP_DEFAULT_CONFIG: IDmStompConfig = {
+    url: '',
+    login: 'guest',
+    passcode: 'guest',
+    heartbeatIn: 0,
+    heartbeatOut: 20000,
+    host: '/',
+    protocols: ['v10.stomp', 'v11.stomp']
 }
 
-export class DmStompService {
+export class DmStomp {
 
     private _state: DmStompState = DmStompState.Undefined;
     public state: BehaviorSubject<DmStompState> = new BehaviorSubject(DmStompState.Undefined);
@@ -62,18 +48,18 @@ export class DmStompService {
     
     private client?: StompClient;
 
-    constructor(private config?: DmStompServiceConfig) {
+    constructor(private config?: IDmStompConfig) {
         if (config) {
             this.configure(config);
         }
     }
 
-    configure(config: DmStompServiceConfig): void {
-        this.config = config;
-        const ws = this.config.ws || new WebSocket(this.config.url, this.config.protocols);
+    configure(config: IDmStompConfig): void {
+        this.config = Object.assign(Object.assign({}, DM_STOMP_DEFAULT_CONFIG), config);
+        const ws = this.config.ws || new WebSocket(this.config.url!, this.config.protocols);
         this.client = new StompClient(ws);
-        this.client.heartbeat.incoming = this.config.heartbeatIn;
-        this.client.heartbeat.outgoing = this.config.heartbeatOut;
+        this.client.heartbeat.incoming = this.config.heartbeatIn!;
+        this.client.heartbeat.outgoing = this.config.heartbeatOut!;
         this.client.errorCallback = f => this.onError.next(f);
         this.client.connectCallback = f => this.onConnect.next(f);
         this.client.disconnectCallback = f => this.onDisconnect.next(f);
@@ -90,7 +76,7 @@ export class DmStompService {
             return false;
         }
         this.state.next(DmStompState.Connecting);
-        this.client.connect(this.config.login, this.config.passcode, this.config.host);
+        this.client.connect(this.config.login!, this.config.passcode!, this.config.host!);
         return true;
     }
 
