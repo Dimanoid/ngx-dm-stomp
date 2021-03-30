@@ -99,6 +99,10 @@ export class DmStomp {
         this.client!.subscribe(topic, (msg) => callback ? callback(msg) : {}, headers || { ack: 'auto' });
     }
 
+    unsubscribe(id: string): void {
+        this.client?.unsubscribe(id);
+    }
+
     isConnected(): boolean {
         return this.client ? this.client.connected : false;
     }

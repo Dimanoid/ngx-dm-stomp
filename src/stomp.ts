@@ -366,7 +366,7 @@ export class StompClient {
         return this._transmit('SEND', headers, body);
     }
 
-    subscribe(destination: string, callback: (frame: StompFrame) => void, headers: { [id: string]: string }) {
+    subscribe(destination: string, callback: (frame: StompFrame) => void, headers: { [id: string]: string }): string {
         if (headers == null) {
             headers = {};
         }
@@ -376,10 +376,7 @@ export class StompClient {
         headers.destination = destination;
         this.subscriptions[headers.id] = callback;
         this._transmit('SUBSCRIBE', headers);
-        return {
-            id: headers.id,
-            unsubscribe: () => this.unsubscribe(headers.id)
-        };
+        return headers.id;
     }
 
     unsubscribe(id: string): void {
