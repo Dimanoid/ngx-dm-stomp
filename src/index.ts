@@ -1,2 +1,2 @@
 export * from './stomp';
-export * from './stomp.service';
+export * from './dm-stomp';

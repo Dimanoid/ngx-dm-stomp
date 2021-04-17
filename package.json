@@ -1,15 +1,18 @@
 {
     "name": "@dimanoid/stomp",
-    "version": "0.0.3",
-    "scripts": {
-        "build": "node_modules/lib-tools/bin/lib build",
-        "publish": "npm publish dist/lib --access public"
+    "version": "0.0.10",
+    "repository": {
+        "url": "https://github.com/Dimanoid/stomp.git"
     },
-    "dependencies": {
-        "rxjs": "~6.6.7",
-        "tslib": "^2.1.0"
+    "license": "MIT",
+    "scripts": {
+        "build": "node_modules/lib-tools/bin/lib build"
+    },
+    "peerDependencies": {
+        "rxjs": "~6.6.7"
     },
     "devDependencies": {
+        "tslib": "^2.1.0",
         "lib-tools": "^2.0.4"
     }
 }

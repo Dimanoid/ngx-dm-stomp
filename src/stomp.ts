@@ -142,18 +142,31 @@ export class StompClient {
 
     debug?: (...args: any[]) => void;
 
-    constructor(ws: WebSocket) {
+    constructor(ws: WebSocket, callbacks?: {
+        error?: (frame: StompFrame) => void,
+        connect?: (frame: StompFrame) => void,
+        disconnect?: (frame: StompFrame) => void,
+        receive?: (frame: StompFrame) => void,
+        receipt?: (frame: StompFrame) => void,
+        debug?: (frame: StompFrame) => void,
+    }) {
         this.ws = ws;
         this.ws.binaryType = 'arraybuffer';
+        this.errorCallback = callbacks?.error;
+        this.connectCallback = callbacks?.connect;
+        this.disconnectCallback = callbacks?.connect;
+        this.onreceive = callbacks?.receive;
+        this.onreceipt = callbacks?.receipt;
+        this.debug = callbacks?.debug;
     }
 
-    D(...args: any[]): void {
+    private _D(...args: any[]): void {
         if (this.debug) {
             this.debug(...args);
         };
     }
 
-    now(): number {
+    private _now(): number {
         if (Date.now) {
             return Date.now();
         }
@@ -162,17 +175,28 @@ export class StompClient {
         }
     }
 
+    private _send(msg: string): void {
+        if (this.ws) {
+            if (this.ws.readyState == WebSocket.OPEN) {
+                this.ws.send(msg);
+            }
+            else if (this.ws.readyState == WebSocket.CONNECTING) {
+                setTimeout(() => this._send(msg), 100);
+            }
+        }
+    }
+
     private _transmit(command: string, headers: { [id: string]: string }, body?: string): void {
         let out = StompFrame.marshall(command, headers, body);
-        this.D('>>> ', out);
+        this._D('>>> ', out);
         while (true) {
             if (out.length > this.maxWebSocketFrameSize) {
-                this.ws.send(out.substring(0, this.maxWebSocketFrameSize));
+                this._send(out.substring(0, this.maxWebSocketFrameSize));
                 out = out.substring(this.maxWebSocketFrameSize);
-                this.D('remaining = ', out.length);
+                this._D('remaining = ', out.length);
             }
             else {
-                return this.ws.send(out);
+                return this._send(out);
             }
         }
     }
@@ -187,19 +211,19 @@ export class StompClient {
 
         if (this.heartbeat.outgoing !== 0 && +serverIncoming !== 0) {
             const ttl = Math.max(this.heartbeat.outgoing, +serverIncoming);
-            this.D('send PING every ', ttl, 'ms');
+            this._D('send PING every ', ttl, 'ms');
             this.pinger = setInterval(() => {
-                this.ws.send(Byte.LF);
-                this.D('>>> PING');
+                this._send(Byte.LF);
+                this._D('>>> PING');
             }, ttl);
         }
         if (this.heartbeat.incoming !== 0 && +serverOutgoing !== 0) {
             const ttl = Math.max(this.heartbeat.incoming, +serverOutgoing);
-            this.D('check PONG every ', ttl, 'ms');
+            this._D('check PONG every ', ttl, 'ms');
             this.ponger = setInterval(() => {
-                const delta = this.now() - this.serverActivity;
+                const delta = this._now() - this.serverActivity;
                 if (delta > ttl * 2) {
-                    this.D('did not receive server activity for the last', delta, 'ms');
+                    this._D('did not receive server activity for the last', delta, 'ms');
                     this.ws.close();
                 }
             }, ttl);
@@ -215,12 +239,12 @@ export class StompClient {
         this.headers['passcode'] = passcode;
         this.headers['host'] = host;
 
-        this.D('Opening Web Socket...');
+        this._D('Opening Web Socket...');
         this.ws.onmessage = (evt) => {
             let data;
             if (typeof ArrayBuffer !== 'undefined' && evt.data instanceof ArrayBuffer) {
                 const arr = new Uint8Array(evt.data);
-                this.D('--- got data length:', arr.length);
+                this._D('--- got data length:', arr.length);
                 data = '';
                 for (let i = 0; i < arr.length; i++) {
                     data = data + String.fromCharCode(arr[i]);
@@ -230,18 +254,18 @@ export class StompClient {
                 data = evt.data;
             }
 
-            this.serverActivity = this.now();
+            this.serverActivity = this._now();
             if (data === Byte.LF) {
-                this.D('<<< PONG');
+                this._D('<<< PONG');
                 return;
             }
-            this.D('<<< ' + data);
+            this._D('<<< ' + data);
             const umData = StompFrame.unmarshall(data);
             for (let i = 0; i < umData.length; i++) {
                 const frame = umData[i];
                 switch (frame.command) {
                     case 'CONNECTED':
-                        this.D('connected to server ', frame.headers.server);
+                        this._D('connected to server ', frame.headers.server);
                         this.connected = true;
                         this._setupHeartbeat(frame.headers);
                         if (this.connectCallback) {
@@ -251,24 +275,27 @@ export class StompClient {
                     case 'MESSAGE':
                         const subscription = frame.headers.subscription;
                         const onreceive = this.subscriptions[subscription] || this.onreceive;
+                        const messageID = frame.headers['message-id'];
+                        frame.ack = (headers) => {
+                            if (headers == null) {
+                                headers = {};
+                            }
+                            this.ack(messageID, subscription, headers);
+                        };
+                        frame.nack = (headers) => {
+                            if (headers == null) {
+                                headers = {};
+                            }
+                            return this.nack(messageID, subscription, headers);
+                        };
+                        if (this.subscriptions[subscription]) {
+                            this.subscriptions[subscription](frame);
+                        }
                         if (onreceive) {
-                            const messageID = frame.headers['message-id'];
-                            frame.ack = (headers) => {
-                                if (headers == null) {
-                                    headers = {};
-                                }
-                                this.ack(messageID, subscription, headers);
-                            };
-                            frame.nack = (headers) => {
-                                if (headers == null) {
-                                    headers = {};
-                                }
-                                return this.nack(messageID, subscription, headers);
-                            };
                             onreceive(frame);
                         }
-                        else {
-                            this.D('Unhandled received MESSAGE:', frame);
+                        if (!this.subscriptions[subscription] && !onreceive) {
+                            this._D('Unhandled received MESSAGE:', frame);
                         }
                         break;
                     case 'RECEIPT':
@@ -277,22 +304,22 @@ export class StompClient {
                         }
                         break;
                     case 'ERROR':
-                        this.D('ws.readyState:', this.ws.readyState);
+                        this._D('ws.readyState:', this.ws.readyState);
                         if (this.errorCallback) {
                             this.errorCallback(frame);
-                            this.D('after errorCallback ws.readyState:', this.ws.readyState);
+                            this._D('after errorCallback ws.readyState:', this.ws.readyState);
                         }
                         break;
                     default:
-                        this.D('Unhandled frame:', frame);
+                        this._D('Unhandled frame:', frame);
                 }
-                this.D('after switch ws.readyState:', this.ws.readyState);
+                this._D('after switch ws.readyState:', this.ws.readyState);
             }
-            this.D('after for ws.readyState:', this.ws.readyState);
+            this._D('after for ws.readyState:', this.ws.readyState);
         };
 
         this.ws.onclose = (...q) => {
-            this.D('ws.onclose, ws.readyState:', this.ws.readyState, q);
+            this._D('ws.onclose, ws.readyState:', this.ws.readyState, q);
             this._cleanUp();
             if (this.disconnectCallback) {
                 this.disconnectCallback();
@@ -300,7 +327,7 @@ export class StompClient {
         };
 
         this.ws.onopen = () => {
-            this.D('Web Socket Opened...');
+            this._D('Web Socket Opened...');
             this.headers['accept-version'] = VERSIONS.supportedVersions;
             this.headers['heart-beat'] = [this.heartbeat.outgoing, this.heartbeat.incoming].join(',');
             this._transmit('CONNECT', this.headers);
@@ -308,7 +335,7 @@ export class StompClient {
     }
 
     disconnect(disconnectCallback: (frame?: StompFrame) => void, headers?: { [id: string]: string }) {
-        this.D('disconnect, ws.readyState:', this.ws.readyState);
+        this._D('disconnect, ws.readyState:', this.ws.readyState);
         this._transmit('DISCONNECT', headers || {});
         this.ws.onclose = null;
         this.ws.close();
@@ -339,7 +366,7 @@ export class StompClient {
         return this._transmit('SEND', headers, body);
     }
 
-    subscribe(destination: string, callback: (frame: StompFrame) => void, headers: { [id: string]: string }) {
+    subscribe(destination: string, callback: (frame: StompFrame) => void, headers: { [id: string]: string }): string {
         if (headers == null) {
             headers = {};
         }
@@ -349,10 +376,7 @@ export class StompClient {
         headers.destination = destination;
         this.subscriptions[headers.id] = callback;
         this._transmit('SUBSCRIBE', headers);
-        return {
-            id: headers.id,
-            unsubscribe: () => this.unsubscribe(headers.id)
-        };
+        return headers.id;
     }
 
     unsubscribe(id: string): void {
