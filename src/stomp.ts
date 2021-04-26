@@ -280,7 +280,6 @@ export class StompClient {
                         break;
                     case 'MESSAGE':
                         const subscription = frame.headers.subscription;
-                        const onreceive = this.subscriptions[subscription] || this.onreceive;
                         const messageID = frame.headers['message-id'];
                         frame.ack = (headers) => {
                             if (headers == null) {
@@ -297,10 +296,10 @@ export class StompClient {
                         if (this.subscriptions[subscription]) {
                             this.subscriptions[subscription](frame);
                         }
-                        if (onreceive) {
-                            onreceive(frame);
+                        if (this.onreceive) {
+                            this.onreceive(frame);
                         }
-                        if (!this.subscriptions[subscription] && !onreceive) {
+                        if (!this.subscriptions[subscription] && !this.onreceive) {
                             this._D('Unhandled received MESSAGE:', frame);
                         }
                         break;
