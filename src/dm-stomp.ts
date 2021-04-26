@@ -102,12 +102,12 @@ export class DmStomp {
         );
     }
 
-    publish(topic: string, message: string, headers?: { [id: string]: string }) {
+    publish(topic: string, message: string, headers?: { [id: string]: string }): void {
         this.client!.send(topic, headers || {}, message);
     }
 
-    subscribe(topic: string, callback?: (frame: StompFrame) => void, headers?: { [id: string]: string }): void {
-        this.client!.subscribe(topic, (msg) => callback ? callback(msg) : {}, headers || { ack: 'auto' });
+    subscribe(topic: string, callback?: (frame: StompFrame) => void, headers?: { [id: string]: string }): string {
+        return this.client!.subscribe(topic, (msg) => callback ? callback(msg) : {}, headers || { ack: 'auto' });
     }
 
     unsubscribe(id: string): void {
