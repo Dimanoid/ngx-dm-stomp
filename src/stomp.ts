@@ -154,7 +154,7 @@ export class StompClient {
         this.ws.binaryType = 'arraybuffer';
         this.errorCallback = callbacks?.error;
         this.connectCallback = callbacks?.connect;
-        this.disconnectCallback = callbacks?.connect;
+        this.disconnectCallback = callbacks?.disconnect;
         this.onreceive = callbacks?.receive;
         this.onreceipt = callbacks?.receipt;
         this.debug = callbacks?.debug;

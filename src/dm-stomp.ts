@@ -54,9 +54,29 @@ export class DmStomp {
         }
     }
 
-    configure(config: IDmStompConfig): void {
+
+    /**
+     * Configures STOMP client
+     *
+     * @param {IDmStompConfig} config
+     * @returns {*} undefined if OK, exception object if an error occures when creating WebSocket
+     * @memberof DmStomp
+     */
+     configure(config: IDmStompConfig): void {
+        if (this.client) {
+            this.disconnect();
+            this.client = undefined;
+        }
         this.config = Object.assign(Object.assign({}, DM_STOMP_DEFAULT_CONFIG), config);
-        const ws = this.config.ws || new WebSocket(this.config.url!, this.config.protocols);
+        let ws = this.config.ws;
+        if (!ws) {
+            try {
+                ws = new WebSocket(this.config.url!, this.config.protocols);
+            }
+            catch (e) {
+                return e;
+            }
+        }
         this.client = new StompClient(ws, {
             error: f => this.handleError(f),
             connect: f => this.handleConnect(f),
