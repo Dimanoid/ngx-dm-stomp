@@ -234,6 +234,8 @@ export class StompClient {
         login: string,
         passcode: string,
         host: string,
+        connectCallback?: (frame?: StompFrame) => void,
+        errorCallback?: (frame?: StompFrame) => void
     ) {
         this.headers['login'] = login;
         this.headers['passcode'] = passcode;
@@ -271,6 +273,10 @@ export class StompClient {
                         if (this.connectCallback) {
                             this.connectCallback(frame);
                         }
+                        if (connectCallback) {
+                            connectCallback(frame);
+                            connectCallback = undefined;
+                        }
                         break;
                     case 'MESSAGE':
                         const subscription = frame.headers.subscription;
@@ -307,6 +313,10 @@ export class StompClient {
                         if (this.errorCallback) {
                             this.errorCallback(frame);
                             this._D('after errorCallback ws.readyState:', this.ws.readyState);
+                        }
+                        if (errorCallback) {
+                            errorCallback(frame);
+                            errorCallback = undefined;
                         }
                         break;
                     default:
