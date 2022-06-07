@@ -9,10 +9,10 @@
         "build": "node_modules/lib-tools/bin/lib build"
     },
     "peerDependencies": {
-        "rxjs": "~6.6.7"
+        "rxjs": ">=6.6.7"
     },
     "devDependencies": {
-        "tslib": "^2.1.0",
+        "tslib": "^2.4.0",
         "lib-tools": "^2.0.4"
     }
 }
